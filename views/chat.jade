@@ -19,6 +19,7 @@
     button(type='button')#clear Limpar
 
   script(type="text/javascript")
+
     function toShortName(email) {
       return email.substr(0, email.indexOf("@"));
     }
@@ -29,6 +30,7 @@
     }
 
     $(function() {
+
       // Text input
       $("#text").focusin(function() {
         $(this).addClass('ui-state-highlight');
@@ -47,54 +49,68 @@
   
       // Prompt for user email
       var email = '';
+      var current = 0;
+
       while(email === null || email === '') {
         email = prompt('Qual seu email?', '');
       }
 
+      // SEND A REQUEST TO THE SERVER TO REGISTER THE NEW USER
+      $.post('/join',
+            {email: email},
+            function(data) {
+                $("#login_menu").html(email);
+                // Add email to users list
+                current = data[1];
+                for (i = 0 ; i < data[0].length ; i++ ) {
+                    $("<li data-name='" + data[0][i][0] + "'></li>").html("<img src='" + toGravatarUrl(data[0][i][0]) + "' />" + toShortName(data[0][i][0])).appendTo("#chat_users ul");
+                }
+              update();
+        });
+
+        
+
       // focus on text input
       $("#text").focus();
-
-      // Socket.io
-      var socket = new io.Socket('localhost');
-      socket.connect();
-
-      socket.on('connect', function() {
-        socket.send({action: 'join', email: email});
-      });
-
-      socket.on('message', function(data) {
-        if (data.action === 'message') {
-          $("<li style='display: none;'></li>").html("<img src='" + toGravatarUrl(data.email) + "' />" + "<span class='conversation_text'><b>" + toShortName(data.email) + "</b>: " + data.message + "</span>").appendTo("#chat_conversations ul").fadeIn();
-
-        } else if (data.action === 'join') {
-
-          if(data.email === email) {
-            // Set my email on page
-            $("#login_menu").html(data.email);
-          }
-
-          // Add email to users list
-          $("<li data-name='" + data.email + "'></li>").html("<img src='" + toGravatarUrl(data.email) + "' />" + toShortName(data.email)).appendTo("#chat_users ul");
-  
-          // If this is a new user who joinned, add a message about it
-          if (data.newUser) {
-            $("<li class='conversation_notice' style='display: none;'></li>").html('Usuário <b>' + toShortName(data.email) + "</b> entrou no chat").appendTo("#chat_conversations ul").fadeIn();
-          }
-
-        } else if (data.action === 'leave') {
-          $("li[data-name='" + data.email + "']").remove();
-          $("<li class='conversation_notice' style='display: none;'></li>").html('Usuário <b>' + toShortName(data.email) + "</b> saiu do chat").appendTo("#chat_conversations ul").fadeIn();
-        }
-      });
-
-      socket.on('disconnect', function() {
-        alert('Você foi desconectado do servidor...');
-      });
       
       function send() {
-        socket.send({action: 'message', message: $('#text').val()});
-        $('#text').val('');
-        $('#text').focus();
+        $.post('/message', 
+            {email: email, msg: $('#text').val()},
+            function(data) {
+                if (data == 'success') {
+                    $('#text').val('');
+                    $('#text').focus();
+                }
+            }
+        );
+      };
+
+      function update() {
+            $.get('/get-messages',
+                  {current: current, email: email},
+                  function(data) {
+                      if (data) {
+                          current = data[2];
+                          if (data[0].length > 0) {
+                            var list = '';
+                            for (i = 0 ; i < data[0].length ; i++) {
+                                list +=  "<li data-name='" + data[0][i][0] + "'>";
+                                list += "<img src='" + toGravatarUrl(data[0][i][0]) + "' />" + toShortName(data[0][i][0]) + "</li>";
+                            }
+                            $('#chat_users ul').html(list);
+                          }
+                          for(i = 0 ; i < data[1].length ; i++) {
+                            if (data[1][i][0] != '') {
+                                $("<li style='display: none;'></li>").html("<img src='" + toGravatarUrl(data[1][i][0]) + "' />" + "<span class='conversation_text'><b>" + toShortName(data[1][i][0]) + "</b>: " + data[1][i][1] + "</span>").appendTo("#chat_conversations ul").fadeIn();
+                            } else {
+                               $("<li class='conversation_notice' style='display: none;'></li>").html(data[1][i][1]).appendTo("#chat_conversations ul").fadeIn();
+     
+                            }
+                          }
+                      }
+                  }
+            )
+          setTimeout(update, 2000);
       };
 
       $("#send").click(send);
@@ -108,4 +124,11 @@
         $("#text").val('');
         $('#text').focus();
       });
+
+        $(window).unload(function() {
+                $.post('/leave',
+                    {email: email}
+                )
+        });
+
     });
