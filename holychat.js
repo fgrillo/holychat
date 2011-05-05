@@ -1,9 +1,25 @@
 var express = require('express');
 var jade = require('jade');
 var io = require('socket.io');
+var exec = require('child_process').exec;
 
 var user_list = new Array();
 var msg_list = new Array();
+
+var getCpuCommand = "ps -p " + process.pid + " -u | grep " + process.pid;
+
+function printLog() {
+  var child = exec(getCpuCommand, function(error, stdout, stderr) {
+       var d = new Date();
+       var ts = d.getDay() + '/' + d.getMonth() + '/' + d.getFullYear() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + ':' + d.getMilliseconds();
+
+      var s = stdout.split(/\s+/);
+      var cpu = s[2];
+      var memory = s[3];
+
+      console.log(ts + ',' + memory + ',' + cpu);
+  });
+}
 
 // Express - Configure App
 var app = express.createServer();
@@ -20,7 +36,7 @@ app.configure(function() {
 // Express - Routes
 app.get('/', function(req, res) {
 
-  console.log("Serving chat app");
+  //console.log("Serving chat app");
 
   res.render('chat', {
     layout: 'chatLayout',
@@ -42,7 +58,7 @@ app.post('/join', function(req, res) {
                 user_list[i][1] = 1;
             }
         }
-        console.log('number of users: ' + user_list.length)
+        //console.log('number of users: ' + user_list.length)
         res.send([user_list, msg_list.length]);
         msg_list.push(['', 'Usuário <b>' + email.substr(0, email.indexOf("@")) + '</b> entrou no chat']);
     }
@@ -52,7 +68,7 @@ app.post('/join', function(req, res) {
 app.post('/leave', function(req, res) {
     var email = req.param('email');
 
-    console.log('email: ' + email)
+    //console.log('email: ' + email)
 
     for (i = 0 ; i < user_list.length ; i++) {
         if (user_list[i][0] === email) {
@@ -63,7 +79,7 @@ app.post('/leave', function(req, res) {
         }
     }
 
-    console.log('user logged out! number of users: ' + user_list.length);
+    //console.log('user logged out! number of users: ' + user_list.length);
 
     res.send('success');
 });
@@ -76,7 +92,7 @@ app.post('/message', function(req, res) {
     if (message != '') {
         msg_list.push([email, message]);
         res.send('success');
-        console.log('message saved! new lenght: ' + msg_list.length);
+        //console.log('message saved! new lenght: ' + msg_list.length);
     } else {
         res.send('error');
     }
@@ -99,7 +115,7 @@ app.get('/get-messages', function(req, res) {
         response.push(new Array());
     }
 
-    console.log('current: ' + current + ' lenght: ' + msg_list.length);
+    //console.log('current: ' + current + ' lenght: ' + msg_list.length);
     if (msg_list.length > current) {
         response.push(msg_list.slice(current));
         response.push(msg_list.length);
@@ -120,5 +136,10 @@ function search_user(email) {
 
 // Initialize http server
 app.listen(4567);
-console.log("Holy Chat Started on port %d", app.address().port);
+//console.log("Holy Chat Started on port %d", app.address().port);
+
+// Log cpu and memory utilization
+setInterval(function() {
+  printLog();
+}, 250);
 
