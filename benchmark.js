@@ -18,57 +18,78 @@ function generateRandomMessage() {
 function user() {
 
     function joinAction() {
+
+        var data = "";
+
         var join_req = http.request({host: host, port: port, method: 'post', path: '/join?email=' + testUserEmail}, function(res) {
-            // console.log('STATUS: ' + res.statusCode);
-            // console.log('HEADERS: ' + JSON.stringify(res.headers));
             res.setEncoding('utf8');
             res.on('data', function (chunk) {
-                var result = JSON.parse(chunk);
-                console.log('BODY: ' + result[1]);
+                data += chunk;
+            });
+            res.on('end', function() {
+                result = JSON.parse(data);
+                currentMessage = result[1];
             });
         });
         join_req.end();
+
     }
+
     function getMessages() {
-        var get_req = http.request({host: host, port: port, method: 'get', path: '/get-messages?current=' + currentMessage + '&email=' + testUserEmail}, function(res) {
-            // console.log('STATUS: ' + res.statusCode);
-            // console.log('HEADERS: ' + JSON.stringify(res.headers));
+        var head_string = '{"host":"localhost:4567","connection":"keep-alive","referer":"http://localhost:4567/","origin":"http://localhost:4567","x-requested-with":"XMLHttpRequest","user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_7) AppleWebKit/534.24 (KHTML, like Gecko) Chrome/11.0.696.57 Safari/534.24","content-type":"application/x-www-form-urlencoded","accept":"*/*","accept-encoding":"gzip,deflate,sdch","accept-language":"en-US,en;q=0.8","accept-charset":"ISO-8859-1,utf-8;q=0.7,*;q=0.3"}';
+        var req_headers = JSON.parse(head_string);
+
+        var message = generateRandomMessage();
+
+        var options = {host: host, port: port, method: 'get', path: '/get-messages?current=' + currentMessage + '&email=' + testUserEmail};
+        var opt_size = JSON.stringify(options).length;
+
+        options.headers = req_headers;
+
+        var tsi = new Date();
+        var get_req = http.request(options, function(res) {
             res.setEncoding('utf8');
             res.on('data', function (chunk) {
-                // console.log('BODY: ' + chunk);
+                var tsf = new Date();
+                var result = JSON.parse(chunk);
+
+                currentMessage = result[2];
+
+                var tsf_formatted = tsf.getDay() + '/' + tsf.getMonth() + '/' + tsf.getFullYear() + ' ' + tsf.getHours() + ':' + tsf.getMinutes() + ':' + tsf.getSeconds() + ':' + tsf.getMilliseconds();
+                var dt = tsf.getTime() - tsi.getTime();
+                var allSize = JSON.stringify(res.headers).length + opt_size + head_string.length + chunk.length;
+                console.log(tsf_formatted + ', GET, ' + users + ',' + allSize + ',' + dt);
             });
         });
         get_req.end();
     }
 
     function sendMessage() {
-        message = generateRandomMessage();
+        var head_string = '{"host":"localhost:4567","connection":"keep-alive","referer":"http://localhost:4567/","origin":"http://localhost:4567","x-requested-with":"XMLHttpRequest","user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_7) AppleWebKit/534.24 (KHTML, like Gecko) Chrome/11.0.696.57 Safari/534.24","content-type":"application/x-www-form-urlencoded","accept":"*/*","accept-encoding":"gzip,deflate,sdch","accept-language":"en-US,en;q=0.8","accept-charset":"ISO-8859-1,utf-8;q=0.7,*;q=0.3"}';
+        var req_headers = JSON.parse(head_string);
 
-        var send_req = http.request({host: host, port: port, method: 'post', path: '/message?email=' + testUserEmail + '&msg=' + message}, function(res) {
+        var message = generateRandomMessage();
+
+        var options = {host: host, port: port, method: 'post', path: '/message?email=' + testUserEmail + '&msg=' + message};
+        var opt_size = JSON.stringify(options).length;
+
+        options.headers = req_headers;
+
+        var tsi = new Date();
+        var send_req = http.request(options, function(res) {
             // console.log('STATUS: ' + res.statusCode);
             // console.log('HEADERS: ' + JSON.stringify(res.headers));
             res.setEncoding('utf8');
             res.on('data', function (chunk) {
-                // console.log('BODY: ' + chunk);
+                var tsf = new Date();
+                var tsf_formatted = tsf.getDay() + '/' + tsf.getMonth() + '/' + tsf.getFullYear() + ' ' + tsf.getHours() + ':' + tsf.getMinutes() + ':' + tsf.getSeconds() + ':' + tsf.getMilliseconds();
+                var dt = tsf.getTime() - tsi.getTime();
+                var allSize = JSON.stringify(res.headers).length + opt_size + head_string.length + chunk.length;
+                console.log(tsf_formatted + ', SEND, ' + users + ',' + allSize + ',' + dt);
             });
         });
-        
         send_req.end();
     }
-
-
-    function leaveAction() {
-        var leave_req = http.request({host: host, port: port, method: 'post', path: '/leave?email=' + testUserEmail}, function(res) {
-            // console.log('STATUS: ' + res.statusCode);
-            // console.log('HEADERS: ' + JSON.stringify(res.headers));
-            res.setEncoding('utf8');
-            res.on('data', function (chunk) {
-                // console.log('BODY: ' + chunk);
-            });
-        });
-        leave_req.end();
-    }
-
 
   var testUserEmail = null;
   
@@ -78,7 +99,7 @@ function user() {
   var currentMessage = 0;
 
   joinAction();
-
+  setInterval(sendMessage, 1000);
 
   
   // ws.onmessage = function(message) {
@@ -114,7 +135,7 @@ function user() {
   // }
 }
 
-for(var i=1; i<=1; i++) {
+for(var i=1; i<=100; i++) {
   setTimeout(function() {
     user();
   }, i * 1100);
