@@ -22,7 +22,7 @@ function generateRandomMessage() {
     return randomMessages[extraSize];
 
   } else {
-    var m = "Benchmark Message: " + randomMessage.substring(0, extraSize);
+    var m = "Benchmark+Message:+" + randomMessage.substring(0, extraSize);
     randomMessages.push(m);
 
     return m;
@@ -79,7 +79,7 @@ function user() {
                 var tsf_formatted = tsf.getHours() + ':' + tsf.getMinutes() + ':' + tsf.getSeconds() + ':' + tsf.getMilliseconds();
                 var dt = tsf.getTime() - tsi.getTime();
                 var allSize = JSON.stringify(res.headers).length + opt_size + head_string.length + data.length;
-                console.log(tsf_formatted + ',RECEIVE,' + users + ',' + allSize);
+                console.log(tsf_formatted + ',' + userId + ',RECEIVE,' + users + ',' + allSize);
             });
         });
         get_req.end();
@@ -113,7 +113,7 @@ function user() {
                 if (numberSent == maxMsgs) {
                     clearInterval(si);
                 }
-                console.log(tsf_formatted + ',SEND,' + users + ',' + allSize + ',');
+                console.log(tsf_formatted + ',' + userId + ',SEND,' + users + ',' + allSize + ',');
             });
         });
         send_req.end();
@@ -122,7 +122,8 @@ function user() {
   var testUserEmail = null;
   
   var tss = [];
-  var testUserEmail = 'user' + ++users + '@benchmark.com';
+  var userId = ++users;
+  var testUserEmail = 'user' + userId + '@benchmark.com';
   var currentMessage = 0;
   var numberSent = 0;
 

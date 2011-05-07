@@ -5,6 +5,7 @@ var exec = require('child_process').exec;
 
 var user_list = new Array();
 var msg_list = new Array();
+var allMessages = 0;
 var dtMessages = 0;
 
 var getCpuCommand = "ps -p " + process.pid + " -u | grep " + process.pid;
@@ -18,7 +19,7 @@ function printLog() {
       var cpu = s[2];
       var memory = s[3];
 
-      console.log(ts + ',' + user_list.length + ',' + memory + ',' + cpu + ',' + msg_list.length + ',' + dtMessages);
+      console.log(ts + ',' + user_list.length + ',' + memory + ',' + cpu + ',' + allMessages + ',' + dtMessages);
 
       dtMessages = 0;
   });
@@ -95,6 +96,7 @@ app.post('/message', function(req, res) {
     if (message != '') {
         msg_list.push([email, message]);
         dtMessages++;
+        allMessages++;
         res.send('success');
         //console.log('message saved! new lenght: ' + msg_list.length);
     } else {
@@ -118,6 +120,9 @@ app.get('/get-messages', function(req, res) {
     } else {
         response.push(new Array());
     }
+
+    dtMessages++;
+    allMessages++;
 
     //console.log('current: ' + current + ' lenght: ' + msg_list.length);
     if (msg_list.length > current) {
