@@ -5,19 +5,22 @@ var exec = require('child_process').exec;
 
 var user_list = new Array();
 var msg_list = new Array();
+var dtMessages = 0;
 
 var getCpuCommand = "ps -p " + process.pid + " -u | grep " + process.pid;
 
 function printLog() {
   var child = exec(getCpuCommand, function(error, stdout, stderr) {
        var d = new Date();
-       var ts = d.getDay() + '/' + d.getMonth() + '/' + d.getFullYear() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + ':' + d.getMilliseconds();
+       var ts = d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + ':' + d.getMilliseconds();
 
       var s = stdout.split(/\s+/);
       var cpu = s[2];
       var memory = s[3];
 
-      console.log(ts + ',' + memory + ',' + cpu);
+      console.log(ts + ',' + user_list.length + ',' + memory + ',' + cpu + ',' + msg_list.length + ',' + dtMessages);
+
+      dtMessages = 0;
   });
 }
 
@@ -91,6 +94,7 @@ app.post('/message', function(req, res) {
 
     if (message != '') {
         msg_list.push([email, message]);
+        dtMessages++;
         res.send('success');
         //console.log('message saved! new lenght: ' + msg_list.length);
     } else {
@@ -141,5 +145,5 @@ app.listen(4567);
 // Log cpu and memory utilization
 setInterval(function() {
   printLog();
-}, 250);
+}, 1000);
 

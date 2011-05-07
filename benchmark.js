@@ -7,13 +7,27 @@ var host = '127.0.0.1';
 var port = 4567;
 var users = 0;
 
+var maxMsgs = parseInt(process.argv[3]);
+var maxUsers = parseInt(process.argv[2]);
+
 var randomMessage = "Lorem+Ipsum+is+simply+dummy+text+of+the+printing+and+typesetting+industry.+Lorem+Ipsum+has+been+the+industry's";
+
+var randomMessagesSize = 0;
+var randomMessages = [];
 
 function generateRandomMessage() {
   var extraSize = parseInt(Math.random() * 100);
-  return "Benchmark+Message:+" + randomMessage.substring(0, extraSize);
-}
 
+  if (randomMessagesSize == 100) {
+    return randomMessages[extraSize];
+
+  } else {
+    var m = "Benchmark Message: " + randomMessage.substring(0, extraSize);
+    randomMessages.push(m);
+
+    return m;
+  }
+}
 
 function user() {
 
@@ -57,13 +71,15 @@ function user() {
             res.on('end', function () {
                 var tsf = new Date();
                 var result = JSON.parse(data);
-
-                currentMessage = result[2];
+                
+                if (result) {
+                    currentMessage = result[2];
+                }
 
                 var tsf_formatted = tsf.getHours() + ':' + tsf.getMinutes() + ':' + tsf.getSeconds() + ':' + tsf.getMilliseconds();
                 var dt = tsf.getTime() - tsi.getTime();
                 var allSize = JSON.stringify(res.headers).length + opt_size + head_string.length + data.length;
-                // console.log(tsf_formatted + ', GET, ' + users + ',' + allSize + ',' + dt);
+                console.log(tsf_formatted + ',RECEIVE,' + users + ',' + allSize);
             });
         });
         get_req.end();
@@ -93,7 +109,11 @@ function user() {
                 var tsf_formatted = tsf.getHours() + ':' + tsf.getMinutes() + ':' + tsf.getSeconds() + ':' + tsf.getMilliseconds();
                 var dt = tsf.getTime() - tsi.getTime();
                 var allSize = JSON.stringify(res.headers).length + opt_size + head_string.length + data.length;
-                console.log(tsf_formatted + ', SEND, ' + users + ',' + allSize + ',' + dt);
+                numberSent++;
+                if (numberSent == maxMsgs) {
+                    clearInterval(si);
+                }
+                console.log(tsf_formatted + ',SEND,' + users + ',' + allSize + ',');
             });
         });
         send_req.end();
@@ -102,50 +122,18 @@ function user() {
   var testUserEmail = null;
   
   var tss = [];
-
   var testUserEmail = 'user' + ++users + '@benchmark.com';
   var currentMessage = 0;
+  var numberSent = 0;
 
   joinAction();
-  setInterval(sendMessage, 1000);
+  var si = setInterval(sendMessage, 1000);
   setInterval(getMessages, 2000);
 
-  
-  // ws.onmessage = function(message) {
-  //   var payload = utils.decode(message.data)[0];
-  // 
-  //   if (joined == false) {
-  //     testUserEmail = 'user' + ++users + '@benchamrk.com';
-  //     ws.send(utils.encode({action: 'join', email: testUserEmail}));
-  // 
-  //     joined = true;
-  // 
-  //   } else if (payload.substr(0, 3) === '~j~') {
-  //     var data = JSON.parse(payload.substr(3));
-  // 
-  //     if (data.action === 'join' && data.email === testUserEmail) {
-  //       setInterval(function() {
-  //         tss.push(new Date());
-  //         ws.send(utils.encode({action: 'message', message: generateRandomMessage()}));
-  //       }, 100);
-  // 
-  //     } else if (data.action === 'message' && data.email === testUserEmail) { 
-  //         var d = new Date();
-  //         var ts = d.getDay() + '/' + d.getMonth() + '/' + d.getFullYear() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + ':' + d.getMilliseconds();
-
-  //         var sended = tss.shift();
-  //         var dt = d.getTime() - sended.getTime();
-
-  //         console.log(ts + ',' + users + ',' + payload.length + ',' + dt);
-  //     }
-  //   } else if (payload.substr(0, 3) === '~h~') {
-  //     ws.send(utils.encode('~h~' + ++heartBeats));
-  //   }
-  // }
 }
 
-for(var i=1; i<=500; i++) {
+for(var i=1 ; i<= maxUsers ; i++) {
   setTimeout(function() {
     user();
-  }, i * 100);
+  }, i * 1100);
 }
