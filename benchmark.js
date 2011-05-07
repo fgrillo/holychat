@@ -46,6 +46,16 @@ function user() {
             });
         });
         join_req.end();
+    }
+
+    function leaveAction() {
+
+        var data = "";
+
+        var join_req = http.request({host: host, port: port, method: 'post', path: '/leave?email=' + testUserEmail}, function(res) {
+            res.setEncoding('utf8');
+        });
+        join_req.end();
 
     }
 
@@ -112,8 +122,10 @@ function user() {
                 numberSent++;
                 if (numberSent == maxMsgs) {
                     clearInterval(si);
+                    clearInterval(si_get);
+                    leaveAction();
                 }
-                console.log(tsf_formatted + ',' + userId + ',SEND,' + users + ',' + allSize + ',');
+                console.log(tsf_formatted + ',' + userId + ',SEND,' + users + ',' + allSize);
             });
         });
         send_req.end();
@@ -129,7 +141,7 @@ function user() {
 
   joinAction();
   var si = setInterval(sendMessage, 1000);
-  setInterval(getMessages, 2000);
+  var si_get = setInterval(getMessages, 2000);
 
 }
 
