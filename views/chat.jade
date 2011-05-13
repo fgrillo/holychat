@@ -20,10 +20,12 @@
 
   script(type="text/javascript")
 
+    // Function to get the first part of the user's email
     function toShortName(email) {
       return email.substr(0, email.indexOf("@"));
     }
 
+    // Function to the the gravatar icon for the user email
     function toGravatarUrl(email) {
       var emailHash = hex_md5(email);
       return "http://www.gravatar.com/avatar/" + emailHash + "?size=40&d=mm";
@@ -85,6 +87,8 @@
         );
       };
 
+      // Function to automatically fetch new messages from the server
+      // each 0,5 seconds
       function update() {
             $.get('/get-messages',
                   {current: current, email: email},
