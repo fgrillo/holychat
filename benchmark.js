@@ -9,29 +9,27 @@ var port = 4567;
 var users = 0;
 
 // Get parameters from commmand line
+var maxUsers = parseInt(process.argv[2]); 
 var maxMsgs = parseInt(process.argv[3]);
-var maxUsers = parseInt(process.argv[2]);
+var msgSize = parseInt(process.argv[4]); // In miliseconds
+var sendInterval = parseInt(process.argv[5]); // In miliseconds
+var receiveInterval = parseInt(process.argv[6]); // In miliseconds
+var randomBehavior = parseInt(process.argv[7]); // 0 for regular and 1 for random behavior when sendind messages
 
-// Random message base
-var randomMessage = "Lorem+Ipsum+is+simply+dummy+text+of+the+printing+and+typesetting+industry.+Lorem+Ipsum+has+been+the+industry's";
+var readyMessage = null
 
-var randomMessagesSize = 0;
-var randomMessages = [];
-
-// Utility function that generate randon messages and store them on an array
-// for reuse
-function generateRandomMessage() {
-  var extraSize = parseInt(Math.random() * 100);
-
-  if (randomMessagesSize == 100) {
-    return randomMessages[extraSize];
-
-  } else {
-    var m = "Benchmark+Message:+" + randomMessage.substring(0, extraSize);
-    randomMessages.push(m);
-
-    return m;
-  }
+// Utility function that generate a msg messages
+function generateMessage() {
+    if (readyMessage != null) {
+        return readyMessage;
+    } else {
+        readyMessage = '';
+        for (var i = 0 ; i < msgSize ; i++) {
+            readyMessage += 'a';
+        }
+        console.log('GENERATED A MESSAGE');
+        return readyMessage;
+    }
 }
 
 // Function that emulates a user joining the chat, sendind a determined amount
@@ -78,7 +76,7 @@ function user() {
         var head_string = '{"host":"localhost:4567","connection":"keep-alive","referer":"http://localhost:4567/","origin":"http://localhost:4567","x-requested-with":"XMLHttpRequest","user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_7) AppleWebKit/534.24 (KHTML, like Gecko) Chrome/11.0.696.57 Safari/534.24","content-type":"application/x-www-form-urlencoded","accept":"*/*","accept-encoding":"gzip,deflate,sdch","accept-language":"en-US,en;q=0.8","accept-charset":"ISO-8859-1,utf-8;q=0.7,*;q=0.3"}';
         var req_headers = JSON.parse(head_string);
 
-        var message = generateRandomMessage();
+        var message = generateMessage();
 
         var options = {host: host, port: port, method: 'get', path: '/get-messages?current=' + currentMessage + '&email=' + testUserEmail};
         var opt_size = JSON.stringify(options).length;
@@ -123,7 +121,7 @@ function user() {
         var head_string = '{"host":"localhost:4567","connection":"keep-alive","referer":"http://localhost:4567/","origin":"http://localhost:4567","x-requested-with":"XMLHttpRequest","user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_7) AppleWebKit/534.24 (KHTML, like Gecko) Chrome/11.0.696.57 Safari/534.24","content-type":"application/x-www-form-urlencoded","accept":"*/*","accept-encoding":"gzip,deflate,sdch","accept-language":"en-US,en;q=0.8","accept-charset":"ISO-8859-1,utf-8;q=0.7,*;q=0.3"}';
         var req_headers = JSON.parse(head_string);
 
-        var message = generateRandomMessage();
+        var message = generateMessage();
 
         var options = {host: host, port: port, method: 'post', path: '/message?email=' + testUserEmail + '&msg=' + message};
         var opt_size = JSON.stringify(options).length;
@@ -142,6 +140,8 @@ function user() {
                 var tsf_formatted = tsf.getHours() + ':' + tsf.getMinutes() + ':' + tsf.getSeconds() + ':' + tsf.getMilliseconds();
                 var dt = tsf.getTime() - tsi.getTime();
                 var allSize = JSON.stringify(res.headers).length + opt_size + head_string.length + data.length;
+                
+                //Control the number of messages sent
                 numberSent++;
                 if (numberSent == maxMsgs) {
                     clearInterval(si);
@@ -164,10 +164,11 @@ function user() {
 
   // User join the chat room
   joinAction();
-  // Start sending message on 1 second interval
-  var si = setInterval(sendMessage, 1000);
-  // Start retrieving messages on a 0,5 second interval
-  var si_get = setInterval(getMessages, 500);
+  // Start sending message on interval determined by command line parameter
+  var si = setInterval(sendMessage, sendInterval);
+  // Start retrieving messages on a interval determined by command line
+  // parameter
+  var si_get = setInterval(getMessages, receiveInterval);
 
 }
 
@@ -176,5 +177,5 @@ function user() {
 for(var i=1 ; i<= maxUsers ; i++) {
   setTimeout(function() {
     user();
-  }, i * 1100);
+  }, i * 1000);
 }
