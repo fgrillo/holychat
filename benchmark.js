@@ -11,7 +11,7 @@ var users = 0;
 // Get parameters from commmand line
 var maxUsers = parseInt(process.argv[2]); 
 var maxMsgs = parseInt(process.argv[3]);
-var msgSize = parseInt(process.argv[4]); // In miliseconds
+var msgSize = parseInt(process.argv[4]); // in bytes
 var sendInterval = parseInt(process.argv[5]); // In miliseconds
 var receiveInterval = parseInt(process.argv[6]); // In miliseconds
 var randomBehavior = parseInt(process.argv[7]); // 0 for regular and 1 for random behavior when sendind messages
@@ -144,9 +144,17 @@ function user() {
                 //Control the number of messages sent
                 numberSent++;
                 if (numberSent == maxMsgs) {
-                    clearInterval(si);
                     clearInterval(si_get);
                     leaveAction();
+                } else {
+                    if (randomBehavior) {
+                        // Send a new message between 1 and 5 seconds
+                        setTimeout(sendMessage, Math.floor(Math.random() * 4000) + 1000);
+                    } else {
+                        // Send a new message on a regular period of time
+                        // defined by the CLI parameter
+                        setTimeout(sendMessage, sendInterval);
+                    }
                 }
                 console.log(tsf_formatted + ',' + userId + ',SEND,' + users + ',' + allSize);
             });
@@ -164,8 +172,11 @@ function user() {
 
   // User join the chat room
   joinAction();
-  // Start sending message on interval determined by command line parameter
-  var si = setInterval(sendMessage, sendInterval);
+  
+
+  // This will start sending messages
+  sendMessage();
+
   // Start retrieving messages on a interval determined by command line
   // parameter
   var si_get = setInterval(getMessages, receiveInterval);
@@ -173,7 +184,7 @@ function user() {
 }
 
 // Start the amount of users configured via command line
-// with a diference of 1,1 second each
+// with a diference of 1 second each
 for(var i=1 ; i<= maxUsers ; i++) {
   setTimeout(function() {
     user();
