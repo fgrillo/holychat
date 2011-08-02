@@ -9,6 +9,24 @@ var port = 4567;
 var users = 0;
 
 // Get parameters from commmand line
+if (process.argv[2] == 'help' || process.argv[2] == '?') {
+   console.log(' ');
+   console.log(' ');
+   console.log('Benchmark script Help');
+   console.log('---------------------');
+   console.log(' ');
+   console.log('usage: node benchmark.js (a) (b) (c) (d) (e) (f)'); 
+   console.log(' ');
+   console.log('  (a) - Number of users to spawn (one every 0,5 seconds until reach this number)');
+   console.log('  (b) - Number of messages to sent by each user before it quits the chat');
+   console.log('  (c) - Size of the messages the users will send in bytes');
+   console.log('  (d) - Time interval between messages when sending (miliseconds)');
+   console.log('  (e) - Time interval between getting messages from the server (miliseconds)');
+   console.log('  (f) - User behavior is regular or random - 0 for regular and 1 for random');
+   console.log(' ');
+   console.log(' ');
+   process.exit();
+} 
 var maxUsers = parseInt(process.argv[2]); 
 var maxMsgs = parseInt(process.argv[3]);
 var msgSize = parseInt(process.argv[4]); // in bytes
@@ -59,7 +77,7 @@ function user() {
 
         var data = "";
 
-        var join_req = http.request({host: host, port: port, method: 'post', path: '/leave?email=' + testUserEmail}, function(res) {
+        var join_req = http.request({host: host, port: port, method: 'post', path: '/leave?email=' + testUserEmail + '&current=' + currentMessage}, function(res) {
             res.setEncoding('utf8');
         });
         join_req.end();
@@ -123,7 +141,7 @@ function user() {
 
         var message = generateMessage();
 
-        var options = {host: host, port: port, method: 'post', path: '/message?email=' + testUserEmail + '&msg=' + message};
+        var options = {host: host, port: port, method: 'post', path: '/message?email=' + testUserEmail + '&msg=' + message + '-' + numberSent};
         var opt_size = JSON.stringify(options).length;
 
         options.headers = req_headers;
@@ -188,5 +206,5 @@ function user() {
 for(var i=1 ; i<= maxUsers ; i++) {
   setTimeout(function() {
     user();
-  }, i * 1000);
+  }, i * 100);
 }

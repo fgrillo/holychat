@@ -6,6 +6,8 @@ var exec = require('child_process').exec;
 
 var user_list = new Array();
 var msg_list = new Array();
+var msg_counter_list = new Array();
+var removedCounter = 0;
 var allMessages = 0;
 var dtMessages = 0;
 
@@ -67,10 +69,11 @@ app.post('/join', function(req, res) {
                 user_list[i][1] = 1;
             }
         }
-        res.send([user_list, msg_list.length]);
+        res.send([user_list, (msg_list.length + removedCounter)]);
 
         // Add a message telling to the user that a new user joined the chat room
         msg_list.push(['', 'Usuário <b>' + email.substr(0, email.indexOf("@")) + '</b> entrou no chat']);
+        msg_counter_list.push(user_list.length);
     }
 
 });
@@ -79,12 +82,32 @@ app.post('/join', function(req, res) {
 // Path for users to leav the chat room
 app.post('/leave', function(req, res) {
     var email = req.param('email');
+    var current = req.param('current');
 
     for (i = 0 ; i < user_list.length ; i++) {
         // remove the user from users array and add a message to all users
         if (user_list[i][0] === email) {
             user_list.splice(i, 1);
-            msg_list.push(['', 'Usuário <b>' + email + '</b> saiu do chat']);
+            if (user_list.length > 0) {
+                
+                var totalMessages = (msg_list.length + removedCounter);
+                if (totalMessages > current) {
+                    // If there are new messages
+                    var realPosition = current - removedCounter;
+
+                    for(var j = realPosition ; j < msg_list.length ; j++) {
+                        msg_counter_list[j]--;
+                    }
+                }
+
+                msg_list.push(['', 'Usuário <b>' + email + '</b> saiu do chat']);
+                msg_counter_list.push(user_list.length);
+
+            } else {
+                msg_list = new Array()
+                msg_counter_list = new Array()
+		removedCounter = 0;
+            }
         } else {
             // Mark all other users to update their user list.
             user_list[i][1] = 1;
@@ -105,6 +128,7 @@ app.post('/message', function(req, res) {
     if (message != '') {
         // Add message to the message array and update some log variables
         msg_list.push([email, message]);
+        msg_counter_list.push(user_list.length);
         dtMessages++;
         allMessages++;
 
@@ -139,10 +163,17 @@ app.get('/get-messages', function(req, res) {
     dtMessages++;
     allMessages++;
 
-    if (msg_list.length > current) {
+    var totalMessages = (msg_list.length + removedCounter);
+    if (totalMessages > current) {
         // If there are new messages
-        response.push(msg_list.slice(current));
-        response.push(msg_list.length);
+        var realPosition = current - removedCounter;
+        response.push(msg_list.slice(realPosition));
+
+        for(var j = realPosition ; j < msg_list.length ; j++) {
+            msg_counter_list[j]--;
+        }
+
+        response.push(msg_list.length + removedCounter);
         res.send(response);
     } else {
         // If there is no new message send an empty response
@@ -163,8 +194,27 @@ function search_user(email) {
 // Initialize http server
 app.listen(4567);
 
+setInterval(function() {
+    for(var k = 0 ; k < msg_list.length ; k++) {
+        if (msg_counter_list[k] <= 0) {
+            msg_list.splice(k, 1);
+            msg_counter_list.splice(k, 1);
+            removedCounter++;
+        } 
+    }
+}, 500);
+
+
 // Log CPU and memory usage and communication ammount
 setInterval(function() {
+  /*console.log('==================================')
+  console.log('--- msg_list ---'); console.log(msg_list);
+  console.log('--- msg_counter_list ---'); console.log(msg_counter_list);
+  console.log('--- user_list ---'); console.log(user_list);
+  console.log('Msg_list size: ' + msg_list.length);
+  console.log('RemovedCounter: ' + removedCounter);
+  console.log('Total: ' + (removedCounter + msg_list.length));
+  console.log('==================================')*/
   printLog();
 }, 1000);
 
