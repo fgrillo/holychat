@@ -45,7 +45,6 @@ function generateMessage() {
         for (var i = 0 ; i < msgSize ; i++) {
             readyMessage += 'a';
         }
-        console.log('GENERATED A MESSAGE');
         return readyMessage;
     }
 }
