@@ -1,7 +1,6 @@
 // Include required modules
 var express = require('express');
 var jade = require('jade');
-var io = require('socket.io');
 var exec = require('child_process').exec;
 
 var user_list = new Array();
@@ -216,5 +215,5 @@ setInterval(function() {
   console.log('Total: ' + (removedCounter + msg_list.length));
   console.log('==================================')*/
   printLog();
-}, 1000);
+}, 500);
 
