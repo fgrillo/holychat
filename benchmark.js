@@ -4,9 +4,10 @@ var utils = require('./utils.js');
 var http = require('http');
 var url = require('url');
 
-var host = '127.0.0.1';
+var host = '10.62.9.17';
 var port = 4567;
 var users = 0;
+var logged = 0;
 
 // Get parameters from commmand line
 if (process.argv[2] == 'help' || process.argv[2] == '?') {
@@ -45,7 +46,6 @@ function generateMessage() {
         for (var i = 0 ; i < msgSize ; i++) {
             readyMessage += 'a';
         }
-        console.log('GENERATED A MESSAGE');
         return readyMessage;
     }
 }
@@ -70,6 +70,7 @@ function user() {
             });
         });
         join_req.end();
+	logged++;
     }
 
     // Function for the user to leave the chat room
@@ -81,6 +82,10 @@ function user() {
             res.setEncoding('utf8');
         });
         join_req.end();
+	logged--;	
+	if (logged = 0) {
+	   process.exit();
+	}
 
     }
 
